@@ -85,6 +85,12 @@ def basic_imputation(ys):
         y_start = ys_imputed[start-1]
         y_end = ys_imputed[end]
         linear = linear_impute(y_start=y_start,y_end=y_end,npoints=int((end+1)-start))
+        # Ensure linear is a 1-dimensional array
+        linear = np.array(linear).flatten()
+
+        # Ensure the slice of ys_imputed matches the shape of linear
+        assert len(ys_imputed[int(start):int(end)]) == len(linear)
+
         ys_imputed[int(start):int(end)] = linear
     return ys_imputed
 #linear impute series with gaps of arbitrary size
