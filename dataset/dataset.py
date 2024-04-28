@@ -102,3 +102,20 @@ class FRED():
         plt.title(f"BRENT crude oil prices from FRED about {self.symbol} with STL-SR transform: {slide_window} window")
         plt.legend()
         plt.savefig(f"{save_path_plot}/{self.symbol}_stl_sr_transform.png")
+        
+    def _split_sequence(self, transform: str, slide_window: int, windown: int, pred_windown: int):
+        if transform == "stl_sr_transform":
+            xs, y_trans = self._stl_sr_transform(slide_window)
+        elif transform == "stl_transform":
+            xs, y_trans = self._get_residual_com()
+        X, y = list(), list()
+        y_trans = list(y_trans)
+        for i in range(len(y_trans)):
+            end_ix = i + windown
+            out_end_ix = end_ix + pred_windown
+            if out_end_ix > len(y_trans):
+                break
+            seq_x, seq_y = y_trans[i:end_ix], y_trans[end_ix:out_end_ix]
+            X.append(seq_x)
+            y.append(seq_y)
+        return np.array(X), np.array(y)
