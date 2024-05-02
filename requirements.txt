@@ -5,6 +5,7 @@ pandas
 matplotlib
 cvxpy
 numpy
+tensorflow
 pandas-datareader
 flatbuffers
 Pillow
