@@ -19,6 +19,7 @@ class CNNAnomalyDetector:
         self.pool_size_2 = pool_size_2
         self.dropout_rate = dropout_rate
         self.model = self._build_cnn_model()
+        self.loss = []
 
     def _build_cnn_model(self):
         model = Sequential()
@@ -49,7 +50,6 @@ class CNNAnomalyDetector:
             self.model.save_weights(f'{save_path}/cnn_stl_sr.weights.h5')
         else:
             self.model.save_weights(f'{save_path}/cnn_sr.weights.h5')
-    
     def predict(self, batch_sample):
         return self.model.predict(batch_sample, verbose=1)
     
@@ -60,6 +60,10 @@ class CNNAnomalyDetector:
         dist = (y_true - y_pred) ** 2
         anomalies = np.where(dist > threshold)[0] * self.window
         return anomalies
+        
+    def load_weights(self, path):
+        self.model.load_weights(path)
+        
     
     
         
