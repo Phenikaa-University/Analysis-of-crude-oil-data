@@ -134,7 +134,7 @@ class FREDtest():
         ys = dataset[self.symbol]
         return xs, ys
     
-    def load_data(self, use_stl_sr=False, window: int, pred_window):
+    def load_data(self, window, pred_window, use_stl_sr=False):
         xs, ys = self._get_fred_dataset()
         ys_test_imputed = self.basic_imputation(ys)
         ys_corrupted, positions = generate_point_outliers(
