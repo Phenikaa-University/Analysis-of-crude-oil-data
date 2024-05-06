@@ -63,8 +63,3 @@ class CNNAnomalyDetector:
         
     def load_weights(self, path):
         self.model.load_weights(path)
-        
-    
-    
-        
-    
