@@ -10,6 +10,14 @@ class FREDtrain():
         super().__init__()
         self.date_time = date_time
         self.symbol = symbol
+        
+    def load_data(self, stl_sr=False, slide_window=None, window=None, pred_window=None):
+        if stl_sr:
+            batch_sample, batch_label = self._split_sequence("stl_sr_transform", slide_window=slide_window, windown=window, pred_windown=pred_window)
+        else:
+            batch_sample, batch_label = self._split_sequence("stl_transform")
+        batch_sample = np.expand_dims(batch_sample, axis=2)
+        return batch_sample, batch_label
     
     def _get_fred_dataset(self):
         dataset = web.DataReader(self.symbol, 'fred',start=pd.to_datetime(self.date_time))
