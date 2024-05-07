@@ -5,8 +5,8 @@ from tensorflow.keras.models import Sequential # type: ignore
 from tensorflow.keras.layers import Dense, Conv1D, Flatten, MaxPooling1D, Dropout # type: ignore
 
 class CNNAnomalyDetector:
-    def __init__(self, window, n_features, num_filt_1, num_filt_2, num_nrn_dl, num_nrn_ol,
-                 kernel_size, conv_strides, pool_size_1, pool_size_2, dropout_rate):
+    def __init__(self, window:int = 100, n_features: int = 1, num_filt_1: int = 16, num_filt_2: int = 16, num_nrn_dl: int = 20, num_nrn_ol: int = 1,
+                 kernel_size: int = 2, conv_strides: int = 1, pool_size_1: int = 2, pool_size_2: int = 2, dropout_rate: float = 0.1):
         self.window = window
         self.n_features = n_features
         self.num_filt_1 = num_filt_1
