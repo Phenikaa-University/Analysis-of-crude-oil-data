@@ -157,7 +157,8 @@ class FREDtest():
             y = self.stl_sr_transform(ys_corr_res, xs)
             batch_sample, batch_label = self.split_sequence(list(y), window=window, pred_window=pred_window)
             batch_sample = np.expand_dims(batch_sample, axis=2)
-        batch_sample, batch_label = self.split_sequence(list(ys_corr_res), window=window, pred_window=pred_window)
+        else: 
+            batch_sample, batch_label = self.split_sequence(list(ys_corr_res), window=window, pred_window=pred_window)
         batch_sample = np.expand_dims(batch_sample, axis=2)
         return batch_sample, batch_label
     
