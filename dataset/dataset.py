@@ -160,7 +160,7 @@ class FREDtest():
         else: 
             batch_sample, batch_label = self.split_sequence(list(ys_corr_res), window=window, pred_window=pred_window)
         batch_sample = np.expand_dims(batch_sample, axis=2)
-        return batch_sample, batch_label
+        return batch_sample, batch_label, ys_corrupted, positions
     
     
     
