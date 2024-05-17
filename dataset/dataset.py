@@ -6,16 +6,16 @@ import pandas_datareader as web
 from dataset.utils import *
 
 class FREDtrain():
-    def __init__(self, date_time, symbol):
-        super().__init__()
-        self.date_time = date_time
-        self.symbol = symbol
+    def __init__(self, opt):
+        super(FREDtrain, self).__init__()
+        self.date_time = opt.date_time
+        self.symbol = opt.symbol
         
-    def load_data(self, stl_sr=False, slide_window=None, window=None, pred_window=None):
-        if stl_sr:
-            batch_sample, batch_label = self._split_sequence("stl_sr_transform", slide_window=slide_window, windown=window, pred_windown=pred_window)
-        else:
-            batch_sample, batch_label = self._split_sequence("stl_transform")
+    def load_data(self, opt):
+        if opt.mode == "stl_sr":
+            batch_sample, batch_label = self._split_sequence(opt)
+        elif opt.mode == "stl":
+            batch_sample, batch_label = self._split_sequence(opt)
         batch_sample = np.expand_dims(batch_sample, axis=2)
         return batch_sample, batch_label
     
@@ -111,16 +111,16 @@ class FREDtrain():
         plt.legend()
         plt.savefig(f"{save_path_plot}/{self.symbol}_stl_sr_transform.png")
         
-    def _split_sequence(self, transform: str, slide_window: int, windown: int, pred_windown: int):
-        if transform == "stl_sr_transform":
-            xs, y_trans = self._stl_sr_transform(slide_window)
-        elif transform == "stl_transform":
+    def _split_sequence(self, opt):
+        if opt.mode == "stl_sr":
+            xs, y_trans = self._stl_sr_transform(opt.slide_window)
+        elif opt.mode == "stl":
             xs, y_trans = self._get_residual_com()
         X, y = list(), list()
         y_trans = list(y_trans)
         for i in range(len(y_trans)):
-            end_ix = i + windown
-            out_end_ix = end_ix + pred_windown
+            end_ix = i + opt.window_size
+            out_end_ix = end_ix + opt.pred_window
             if out_end_ix > len(y_trans):
                 break
             seq_x, seq_y = y_trans[i:end_ix], y_trans[end_ix:out_end_ix]
@@ -129,10 +129,10 @@ class FREDtrain():
         return np.array(X), np.array(y)
     
 class FREDtest():
-    def __init__(self, date_time, symbol):
-        super().__init__()
-        self.date_time = date_time
-        self.symbol = symbol
+    def __init__(self, opt):
+        super(FREDtest, self).__init__()
+        self.date_time = opt.date_time
+        self.symbol = opt.symbol
     
     def _get_fred_dataset(self):
         dataset = web.DataReader(self.symbol, 'fred',start=pd.to_datetime(self.date_time))
@@ -142,7 +142,7 @@ class FREDtest():
         ys = dataset[self.symbol]
         return xs, ys
     
-    def load_data(self, window, pred_window, use_stl_sr=False):
+    def load_data(self, opt):
         xs, ys = self._get_fred_dataset()
         ys_test_imputed = self.basic_imputation(ys)
         ys_corrupted, positions = generate_point_outliers(
@@ -153,12 +153,12 @@ class FREDtest():
             rng_seed=2
         )
         ys_corr_res = self.get_residual_com(ys_corrupted, xs)
-        if use_stl_sr:
+        if opt.mode == "stl_sr":
             y = self.stl_sr_transform(ys_corr_res, xs)
-            batch_sample, batch_label = self.split_sequence(list(y), window=window, pred_window=pred_window)
+            batch_sample, batch_label = self.split_sequence(list(y), window=opt.window_size, pred_window=opt.pred_window)
             batch_sample = np.expand_dims(batch_sample, axis=2)
-        else: 
-            batch_sample, batch_label = self.split_sequence(list(ys_corr_res), window=window, pred_window=pred_window)
+        elif opt.mode == "stl": 
+            batch_sample, batch_label = self.split_sequence(list(ys_corr_res), window=opt.window_size, pred_window=opt.pred_window)
         batch_sample = np.expand_dims(batch_sample, axis=2)
         return batch_sample, batch_label, ys_corrupted, positions
     
