@@ -1,15 +1,17 @@
 from dataset.dataset import FREDtest, FREDtrain
 import argparse
 from models.cnnAD import CNNAnomalyDetector
+from models.mvAD import moving_average, moving_median
+from utils import *
 
 def get_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--date_time', type=str, required=True)
     parser.add_argument('--symbol', type=str, required=True)
+    parser.add_argument('--model', type=str, default='mm')
     
-    parser.add_argument('--lr', type=float, default=0.00005)
-    parser.add_argument('--dropout_rate', type=float, default=0.1)
-    parser.add_argument('--batch_size', type=int, default=32)
+
+    parser.add_argument('--detection_threshold', type=float, default=0.085)
     parser.add_argument('--num_epochs', type=int, default=100)
     parser.add_argument('--checkpoint_dir', type=str, default='./checkpoints/')
     parser.add_argument('--mode', type=str, default='stl_sr')
@@ -37,11 +39,21 @@ def main():
     print(opt)
     
     test_data = FREDtest(opt)
-    batch_sample, batch_label, ys_corr, postitions = test_data.load_data(opt)
-    model = CNNAnomalyDetector(opt)
-    model.load_weights("checkpoints/cnn_stl_sr.weights.h5")
-    detected = model.predict(batch_sample)
+    batch_sample, batch_label, ys_corr, positions = test_data.load_data(opt)
     
+    if opt.model == "cnn":
+        model = CNNAnomalyDetector(opt)
+        model.load_weights("checkpoints/cnn_stl_sr.weights.h5")
+        detected = model.detect_anomaly(ys_corr ,batch_sample, opt.detection_threshold)
+    elif opt.model == "ma":
+        detected = moving_average(ys_corr, window_size=opt.window_size, detection_threshold=opt.detection_threshold)
+    elif opt.model == "mm":
+        detected = moving_median(ys_corr, window_size=opt.window_size, detection_threshold=opt.detection_threshold)
+    tp,fp,fn = exact_detection_function(detected=detected,truth=positions)
+    print("true positives:",tp,"false positives:",fp,"false_negatives:",fn)
+    print("precision:",precision(tp=tp,fp=fp,fn=fn))
+    print("recall:",recall(tp=tp,fp=fp,fn=fn))
+    print("f_beta_measure",f_beta_measure(tp=tp,fp=fp,fn=fn,beta=1))
 
 if __name__ == '__main__':
     main()
