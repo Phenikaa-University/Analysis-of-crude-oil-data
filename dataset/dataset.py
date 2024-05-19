@@ -13,11 +13,10 @@ class FREDtrain():
         
     def load_data(self, opt):
         if opt.mode == "stl_sr":
-            batch_sample, batch_label = self._split_sequence(opt)
+            xs, y_trans = self._stl_sr_transform(opt.slide_window)
         elif opt.mode == "stl":
-            batch_sample, batch_label = self._split_sequence(opt)
-        batch_sample = np.expand_dims(batch_sample, axis=2)
-        return batch_sample, batch_label
+            xs, y_trans = self._get_residual_com()
+        return xs, y_trans
     
     def _get_fred_dataset(self):
         dataset = web.DataReader(self.symbol, 'fred',start=pd.to_datetime(self.date_time))
@@ -112,10 +111,7 @@ class FREDtrain():
         plt.savefig(f"{save_path_plot}/{self.symbol}_stl_sr_transform.png")
         
     def _split_sequence(self, opt):
-        if opt.mode == "stl_sr":
-            xs, y_trans = self._stl_sr_transform(opt.slide_window)
-        elif opt.mode == "stl":
-            xs, y_trans = self._get_residual_com()
+
         X, y = list(), list()
         y_trans = list(y_trans)
         for i in range(len(y_trans)):
