@@ -19,7 +19,7 @@ class FREDtrain():
         return xs, y_trans
     
     def _get_fred_dataset(self):
-        dataset = web.DataReader(self.symbol, 'fred', start=self.date_time)
+        dataset = web.DataReader(self.symbol, 'fred', start=pd.to_datetime(self.date_time))
         # dataset = reader.read()
         # Get numeric values from the pandas dataframe
         xs = dataset.index
