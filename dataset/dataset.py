@@ -8,8 +8,8 @@ from dataset.utils import *
 class FREDtrain():
     def __init__(self, opt):
         super(FREDtrain, self).__init__()
-        self.date_time = opt.date_time
         self.symbol = opt.symbol
+        self.date_time = opt.date_time
         
     def load_data(self, opt):
         if opt.mode == "stl_sr":
@@ -19,7 +19,7 @@ class FREDtrain():
         return xs, y_trans
     
     def _get_fred_dataset(self):
-        dataset = web.DataReader(self.symbol, 'fred',start=pd.to_datetime(self.date_time))
+        dataset = web.DataReader(self.symbol, 'fred', start=self.date_time)
         # dataset = reader.read()
         # Get numeric values from the pandas dataframe
         xs = dataset.index

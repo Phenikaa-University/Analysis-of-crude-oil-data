@@ -1,0 +1,1 @@
+python train.py --date_time "1800-1-1" --symbol "DCOILBRENTEU" --mode "stl_sr"

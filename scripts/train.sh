@@ -1,1 +1,0 @@
-python train.py --date_time 
