@@ -38,6 +38,8 @@ def main():
     
     train_data = FREDtrain(opt)
     batch_sample, batch_label = train_data.load_data(opt)
+    # print dtype of batch_sample and batch_label
+    print(batch_sample.dtype)
     model = CNNAnomalyDetector(opt)
     model.train(batch_sample=batch_sample, batch_label=batch_label, opt=opt)
 
