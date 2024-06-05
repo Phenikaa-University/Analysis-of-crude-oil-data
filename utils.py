@@ -25,6 +25,7 @@ def exact_detection_function(detected,truth):
     true_positives: int
     false_positives: int
     false_negatives: int
+    true_negatives: int
 
     """
     detected = np.unique(detected) 
@@ -33,12 +34,14 @@ def exact_detection_function(detected,truth):
     true_positives = set(detected).intersection(set(truth))
     false_positives = set(detected).difference(set(truth))
     false_negatives = set(truth).difference(set(detected))
+    total_non_anomalies = len(truth) - len(true_positives)
 
     tp = len(true_positives) # 36
     fp = len(false_positives) # 21
     fn = len(false_negatives) # 7
+    tn = total_non_anomalies - len(false_positives)
 
-    return tp,fp,fn
+    return tp,fp,fn,tn
 
 
 #define scoring metrics

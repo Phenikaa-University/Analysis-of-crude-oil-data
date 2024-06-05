@@ -1,8 +1,10 @@
-from dataset.dataset import FREDtest, FREDtrain
+from dataset.dataset import *
+from dataset.utils import *
 import argparse
-from models.cnnAD import CNNAnomalyDetector
+from models.cnnAD import cnn_structure
 from models.mvAD import moving_average, moving_median
 from utils import *
+import os
 
 def get_opt():
     parser = argparse.ArgumentParser()
@@ -29,27 +31,118 @@ def get_opt():
     parser.add_argument('--conv_strides', type=int, default=1)
     parser.add_argument('--pool_size_1', type=int, default=2)
     parser.add_argument('--pool_size_2', type=int, default=2)
+    parser.add_argument('--dropout_rate', type=float, default=0.1)
     
     
     opt = parser.parse_args()
     return opt
+
+def cnn_stl_detector(opt, y,detection_threshold):
+    model = cnn_structure(opt) 
+    model.load_weights(opt.checkpoint_dir)
+    
+    batch_sample, batch_label = split_sequence(opt, list(y))
+    batch_sample = np.expand_dims(batch_sample, axis=2)
+    
+    y_pred = model.predict(batch_sample, verbose=1)
+    y_pred = y_pred.reshape(y[opt.window_size:].shape)
+    y_true = y[opt.window_size:].astype('float32')
+    dist = (y_true-y_pred)*(y_true-y_pred) #distance or difference between the predicted and the truth
+    
+    anomalies = np.where(dist>detection_threshold)[0]+opt.window_size #get an array of anomaly indices
+    return anomalies
+
+def cnn_stl_sr(opt, y, x, detection_threshold):
+    """Parameters
+    ----------
+    y: 1d array, dtype=float 
+        time-series sequence 
+    x: DatetimeIndex, dtype='datetime64[ns]'
+        Datetime indices of elements of y
+    detection_threshold: dtype=float
+        threshold for distance between y true and y predicted  
+    weight_dir: string
+        directory of saved CNN model
+        
+    Returns
+    -------
+    anomalies: 1d array, dtype=int 
+         indices of detected anomalies
+
+    """   
+    #apply STL_SR transform to input sequence y
+    y = stl_sr_transform(opt, y,x)
+    
+    #create and load CNN model
+    model = cnn_structure(opt)
+    model.load_weights(opt.checkpoint_dir)
+    
+    #split y into batches
+    batch_sample, batch_label = split_sequence(opt, list(y))
+    batch_sample = np.expand_dims(batch_sample, axis=2)
+    
+    #prediction and anomaly estimation
+    y_pred = model.predict(batch_sample, verbose=1)
+    y_pred = y_pred.reshape(y[opt.window_size:].shape)
+    y_true = y[opt.window_size:].astype('float32')
+    dist = (y_true-y_pred)*(y_true-y_pred)
+    anomalies = np.where(dist>detection_threshold)[0]+opt.window_size
+    
+    return anomalies 
     
 def main():
     opt = get_opt()
     print(opt)
     
-    test_data = FREDtest(opt)
-    batch_sample, batch_label, ys_corr, positions = test_data.load_data(opt)
+    """Testing with corrupted data that contains anomalies"""
+    #collect test dataset which can be train data corrupted with anomalies, or any totally new corrupted data
+    #No. 2 Heating Oil Prices: New York Harbor ------------------------------------------(DHOILNYH)
+    #CBOE Crude Oil ETF Volatility Index ------------------------------------------------(OVXCLS)
+    #Conventional Gasoline Prices: New York Harbor, Regular -----------------------------(DGASNYH)
     
-    if opt.model == "cnn":
-        model = CNNAnomalyDetector(opt)
-        model.load_weights("checkpoints/cnn_stl_sr.weights.h5")
-        detected = model.detect_anomaly(ys_corr ,batch_sample, opt.detection_threshold)
-    elif opt.model == "ma":
-        detected = moving_average(ys_corr, window_size=opt.window_size, detection_threshold=opt.detection_threshold)
-    elif opt.model == "mm":
-        detected = moving_median(ys_corr, window_size=opt.window_size, detection_threshold=opt.detection_threshold)
-    tp,fp,fn = exact_detection_function(detected=detected,truth=positions)
+    xs_test, ys_test = get_fred_dataset(opt)
+    ys_test_imputed = basic_imputation(ys_test)
+    
+    ys_corrputed, positions = generate_point_outliers(
+        raw_data=ys_test_imputed,
+        anomaly_fraction=0.005,
+        window_size=opt.window_size,
+        pointwise_deviation=3.5,
+        rng_seed=2
+    )
+    
+    # Get residual from y_corrputed which will be used as input sequence for the model
+    ys_corr_res = get_residual_com(opt, ys_corrputed, xs_test)
+    
+    '''Detect anomalies with cnn_stl and print results, for one test only - rng_seed=0'''
+
+    print(f"========= {opt.symbol}"+ " dataset ================")
+    # Load model
+    thresholds = np.linspace(0.005, 0.025, 10)
+    tprs = []
+    fprs = []
+    for threshold in thresholds:
+        detected = cnn_stl_detector(opt, ys_corr_res,threshold)
+        tp,fp,fn, tn = exact_detection_function(detected=detected,truth=positions)
+        tpr = tp / (tp + fn)
+        fpr = fp / (fp + tn)
+        tprs.append(tp)
+        fprs.append(fp)
+
+    """Visualize the ROC curve with cnn_stl detector"""
+    plt.plot(fprs, tprs)
+    for i, threshold in enumerate(thresholds):
+        plt.scatter(fprs[i], tprs[i], label=f'threshold: {threshold:.5f}', s=10)
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title(f"ROC Curve {opt.symbol} dataset")
+    plt.legend(loc='lower right')
+    save_path = "plot/results/cnn_stl/"
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+    plt.savefig(f"{save_path}{opt.symbol}_ROC_curve.png")
+    
+    tp,fp,fn, tn = exact_detection_function(detected=detected,truth=positions)
     print("true positives:",tp,"false positives:",fp,"false_negatives:",fn)
     print("precision:",precision(tp=tp,fp=fp,fn=fn))
     print("recall:",recall(tp=tp,fp=fp,fn=fn))

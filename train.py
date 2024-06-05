@@ -1,6 +1,8 @@
-from dataset.dataset import FREDtest, FREDtrain
+from dataset.dataset import *
+from dataset.utils import *
 import argparse
-from models.cnnAD import CNNAnomalyDetector
+from models.cnnAD import cnn_structure
+from tensorflow.keras.optimizers import Adam # type: ignore
 
 def get_opt():
     parser = argparse.ArgumentParser()
@@ -36,12 +38,25 @@ def main():
     opt = get_opt()
     print(opt)
     
-    train_data = FREDtrain(opt)
-    batch_sample, batch_label = train_data.load_data(opt)
-    # print dtype of batch_sample and batch_label
-    print(batch_sample.dtype)
-    model = CNNAnomalyDetector(opt)
-    model.train(batch_sample=batch_sample, batch_label=batch_label, opt=opt)
-
+    xs, ys = get_fred_dataset(opt)
+    # Fill in the missing values in the dataset with linear interpolation
+    ys_imputed = basic_imputation(ys)
+    '''Define training data which is normal data (without anomalies)'''
+    # Get the residual component of the time series
+    ys_res = get_residual_com(opt, ys_imputed, xs)
+    # Split into samples
+    batch_sample, batch_label = split_sequence(opt, list(ys_res))
+    batch_sample = np.expand_dims(batch_sample, axis=2)
+    
+    model = cnn_structure(opt)
+    '''Training procedure'''
+    model.compile(optimizer=Adam(learning_rate=opt.lr),
+                loss='mean_absolute_error')
+    model_fit = model.fit(batch_sample,
+                        batch_label,
+                        epochs=opt.num_epochs,
+                        batch_size=opt.batch_size,
+                        verbose=1)
+    model.save_weights(f'{opt.checkpoint_dir}cnn_sr.weights.h5')
 if __name__ == '__main__':
     main()
