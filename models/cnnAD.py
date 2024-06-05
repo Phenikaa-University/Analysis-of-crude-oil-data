@@ -63,3 +63,25 @@ class CNNAnomalyDetector:
         
     def load_weights(self, path):
         self.model.load_weights(path)
+        
+# build CNN model 
+def cnn_structure(opt):
+    model = Sequential()
+    model.add(Conv1D(filters=opt.num_filt_1,
+                     kernel_size=opt.kernel_size,
+                     strides=opt.conv_strides,
+                     padding='valid',
+                     activation='relu',
+                     input_shape=(opt.window_size, opt.n_features)))
+    model.add(MaxPooling1D(pool_size=opt.pool_size_1)) 
+    model.add(Conv1D(filters=opt.num_filt_2,
+                     kernel_size=opt.kernel_size,
+                     strides=opt.conv_strides,
+                     padding='valid',
+                     activation='relu'))
+    model.add(MaxPooling1D(pool_size=opt.pool_size_2))
+    model.add(Flatten())
+    model.add(Dense(units=opt.num_nrn_dl, activation='relu')) 
+    model.add(Dropout(opt.dropout_rate))
+    model.add(Dense(units=opt.num_nrn_ol))
+    return model
