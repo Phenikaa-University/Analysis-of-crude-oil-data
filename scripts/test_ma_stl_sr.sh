@@ -1,0 +1,1 @@
+python test.py --date_time 1800-1-1 --symbol DCOILBRENTEU  --mode ma
