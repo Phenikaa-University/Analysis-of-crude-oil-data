@@ -9,6 +9,12 @@ threshold = 3
 look_ahead=5
 extend_num=5
 
+def display_metrics(tp, fp, fn):
+    print("true positives:",tp,"false positives:",fp,"false_negatives:",fn)
+    print("precision:",precision(tp=tp,fp=fp,fn=fn))
+    print("recall:",recall(tp=tp,fp=fp,fn=fn))
+    print("f_beta_measure",f_beta_measure(tp=tp,fp=fp,fn=fn,beta=1))
+
 def exact_detection_function(detected,truth):
     """
     Compute true positives (TPs), false positives (FP), false negatives (FP) for exact matches only

@@ -42,21 +42,40 @@ def main():
     # Fill in the missing values in the dataset with linear interpolation
     ys_imputed = basic_imputation(ys)
     '''Define training data which is normal data (without anomalies)'''
-    # Get the residual component of the time series
-    ys_res = get_residual_com(opt, ys_imputed, xs)
-    # Split into samples
-    batch_sample, batch_label = split_sequence(opt, list(ys_res))
-    batch_sample = np.expand_dims(batch_sample, axis=2)
+    if opt.mode == "stl":
+        # Get the residual component of the time series
+        ys_res = get_residual_com(opt, ys_imputed, xs)
+        # Split into samples
+        batch_sample, batch_label = split_sequence(opt, list(ys_res))
+        batch_sample = np.expand_dims(batch_sample, axis=2)
+        
+        model = cnn_structure(opt)
+        '''Training procedure'''
+        model.compile(optimizer=Adam(learning_rate=opt.lr),
+                    loss='mean_absolute_error')
+        model_fit = model.fit(batch_sample,
+                            batch_label,
+                            epochs=opt.num_epochs,
+                            batch_size=opt.batch_size,
+                            verbose=1)
+        model.save_weights(f'{opt.checkpoint_dir}cnn_stl.weights.h5')
     
-    model = cnn_structure(opt)
-    '''Training procedure'''
-    model.compile(optimizer=Adam(learning_rate=opt.lr),
-                loss='mean_absolute_error')
-    model_fit = model.fit(batch_sample,
-                        batch_label,
-                        epochs=opt.num_epochs,
-                        batch_size=opt.batch_size,
-                        verbose=1)
-    model.save_weights(f'{opt.checkpoint_dir}cnn_sr.weights.h5')
+    if opt.mode == "stl_sr":
+        # Apply STL_SR transform to imputed normal data: ys_imputed
+        y_trans = stl_sr_transform(opt, ys_imputed, xs)
+        # Split into samples
+        batch_sample, batch_label = split_sequence(opt, list(y_trans))
+        batch_sample = np.expand_dims(batch_sample, axis=2)
+
+        model = cnn_structure(opt)
+        '''Training procedure'''
+        model.compile(optimizer=Adam(learning_rate=opt.lr),
+                    loss='mean_absolute_error')
+        model_fit = model.fit(batch_sample,
+                            batch_label,
+                            epochs=opt.num_epochs,
+                            batch_size=opt.batch_size,
+                            verbose=1)
+        model.save_weights(f'{opt.checkpoint_dir}cnn_stl_sr.weights.h5')
 if __name__ == '__main__':
     main()

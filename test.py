@@ -15,7 +15,6 @@ def get_opt():
 
     parser.add_argument('--detection_threshold', type=float, default=0.085)
     parser.add_argument('--num_epochs', type=int, default=100)
-    parser.add_argument('--checkpoint_dir', type=str, default='./checkpoints/')
     parser.add_argument('--mode', type=str, default='stl_sr')
     
     parser.add_argument('--window_size', type=int, default=100)
@@ -39,7 +38,7 @@ def get_opt():
 
 def cnn_stl_detector(opt, y,detection_threshold):
     model = cnn_structure(opt) 
-    model.load_weights(opt.checkpoint_dir)
+    model.load_weights("./checkpoints/cnn_sr.weights.h5")
     
     batch_sample, batch_label = split_sequence(opt, list(y))
     batch_sample = np.expand_dims(batch_sample, axis=2)
@@ -75,7 +74,7 @@ def cnn_stl_sr(opt, y, x, detection_threshold):
     
     #create and load CNN model
     model = cnn_structure(opt)
-    model.load_weights(opt.checkpoint_dir)
+    model.load_weights("./checkpoints/cnn_stl_sr.weights.h5")
     
     #split y into batches
     batch_sample, batch_label = split_sequence(opt, list(y))
@@ -118,16 +117,29 @@ def main():
 
     print(f"========= {opt.symbol}"+ " dataset ================")
     # Load model
-    thresholds = np.linspace(0.005, 0.025, 10)
-    tprs = []
-    fprs = []
-    for threshold in thresholds:
-        detected = cnn_stl_detector(opt, ys_corr_res,threshold)
-        tp,fp,fn, tn = exact_detection_function(detected=detected,truth=positions)
-        tpr = tp / (tp + fn)
-        fpr = fp / (fp + tn)
-        tprs.append(tp)
-        fprs.append(fp)
+    if opt.mode == "stl":
+        thresholds = np.linspace(0.005, 0.025, 10)
+        tprs = []
+        fprs = []
+        for threshold in thresholds:
+            detected = cnn_stl_detector(opt, ys_corr_res,threshold)
+            tp,fp,fn, tn = exact_detection_function(detected=detected,truth=positions)
+            tpr = tp / (tp + fn)
+            fpr = fp / (fp + tn)
+            tprs.append(tp)
+            fprs.append(fp)
+            
+    if opt.mode == "stl_sr":
+        thresholds = np.linspace(0.05, 0.1, 10)
+        tprs = []
+        fprs = []
+        for threshold in thresholds:
+            detected = cnn_stl_sr(opt, ys_corr_res, xs_test,threshold)
+            tp,fp,fn, tn = exact_detection_function(detected=detected,truth=positions)
+            tpr = tp / (tp + fn)
+            fpr = fp / (fp + tn)
+            tprs.append(tp)
+            fprs.append(fp)
 
     """Visualize the ROC curve with cnn_stl detector"""
     plt.plot(fprs, tprs)
@@ -137,16 +149,32 @@ def main():
     plt.ylabel("True Positive Rate")
     plt.title(f"ROC Curve {opt.symbol} dataset")
     plt.legend(loc='lower right')
-    save_path = "plot/results/cnn_stl/"
+    
+    if opt.mode == "stl":
+        save_path = "plot/results/cnn_stl/"
+        detected = cnn_stl_detector(opt, ys_corr_res,detection_threshold=0.01167)
+    elif opt.mode == "stl_sr":
+        save_path = "plot/results/cnn_stl_sr/"
+        detected = cnn_stl_detector(opt, ys_corr_res,detection_threshold=0.06667)
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     plt.savefig(f"{save_path}{opt.symbol}_ROC_curve.png")
-    
     tp,fp,fn, tn = exact_detection_function(detected=detected,truth=positions)
-    print("true positives:",tp,"false positives:",fp,"false_negatives:",fn)
-    print("precision:",precision(tp=tp,fp=fp,fn=fn))
-    print("recall:",recall(tp=tp,fp=fp,fn=fn))
-    print("f_beta_measure",f_beta_measure(tp=tp,fp=fp,fn=fn,beta=1))
+    display_metrics(tp,fp,fn)
+    """Visualize the detected animalies with cnn_stl detector"""
+    
+    fig,ax = plt.subplots(1,figsize=(12,9))
+    plt.plot(ys_corrputed,label="corrupted data")
+    plt.plot(positions,ys_corrputed[positions],'rx', markersize=8, label="true anomalies")
+    plt.plot(detected,ys_corrputed[detected],'ko', markersize=4, label="detected anomalies")
+    plt.legend()
+    if opt.mode == "stl":
+        plt.title(f"Detects anomalies using {opt.symbol} dataset with CNN_STL")
+        plt.savefig(f"plot/results/cnn_stl/{opt.symbol}_detected_anomalies_cnn_stl.png")
+    elif opt.mode == "stl_sr":
+        plt.title(f"Detects anomalies using {opt.symbol} dataset with CNN_STL_SR")
+        plt.savefig(f"plot/results/cnn_stl/{opt.symbol}_detected_anomalies_cnn_stl_sr.png")
+
 
 if __name__ == '__main__':
     main()
