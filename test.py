@@ -128,6 +128,14 @@ def main():
             fpr = fp / (fp + tn)
             tprs.append(tp)
             fprs.append(fp)
+        """Visualize the ROC curve with cnn_stl detector"""
+        plt.plot(fprs, tprs)
+        for i, threshold in enumerate(thresholds):
+            plt.scatter(fprs[i], tprs[i], label=f'threshold: {threshold:.5f}', s=10)
+        plt.xlabel("False Positive Rate")
+        plt.ylabel("True Positive Rate")
+        plt.title(f"ROC Curve {opt.symbol} dataset")
+        plt.legend(loc='lower right')
             
     if opt.mode == "stl_sr":
         thresholds = np.linspace(0.05, 0.1, 10)
@@ -140,15 +148,14 @@ def main():
             fpr = fp / (fp + tn)
             tprs.append(tp)
             fprs.append(fp)
-
-    """Visualize the ROC curve with cnn_stl detector"""
-    plt.plot(fprs, tprs)
-    for i, threshold in enumerate(thresholds):
-        plt.scatter(fprs[i], tprs[i], label=f'threshold: {threshold:.5f}', s=10)
-    plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate")
-    plt.title(f"ROC Curve {opt.symbol} dataset")
-    plt.legend(loc='lower right')
+        """Visualize the ROC curve with cnn_stl detector"""
+        plt.plot(fprs, tprs)
+        for i, threshold in enumerate(thresholds):
+            plt.scatter(fprs[i], tprs[i], label=f'threshold: {threshold:.5f}', s=10)
+        plt.xlabel("False Positive Rate")
+        plt.ylabel("True Positive Rate")
+        plt.title(f"ROC Curve {opt.symbol} dataset")
+        plt.legend(loc='lower right')
     
     if opt.mode == "stl":
         save_path = "plot/results/cnn_stl/"
@@ -156,6 +163,12 @@ def main():
     elif opt.mode == "stl_sr":
         save_path = "plot/results/cnn_stl_sr/"
         detected = cnn_stl_detector(opt, ys_corr_res,detection_threshold=0.06667)
+    elif opt.mode == "ma":
+        save_path = "plot/results/moving_average/"
+        detected = moving_average(ys_corrputed, opt.window_size, detection_threshold=3)
+    elif opt.mode == "mm":
+        save_path = "plot/results/moving_median/"
+        detected = moving_median(ys_corrputed, opt.window_size, detection_threshold=3)
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     plt.savefig(f"{save_path}{opt.symbol}_ROC_curve.png")
@@ -174,6 +187,12 @@ def main():
     elif opt.mode == "stl_sr":
         plt.title(f"Detects anomalies using {opt.symbol} dataset with CNN_STL_SR")
         plt.savefig(f"plot/results/cnn_stl/{opt.symbol}_detected_anomalies_cnn_stl_sr.png")
+    elif opt.mode == "ma":
+        plt.title(f"Detects anomalies using {opt.symbol} dataset with Moving Average")
+        plt.savefig(f"plot/results/moving_average/{opt.symbol}_detected_anomalies_moving_average.png")
+    elif opt.mode == "mm":
+        plt.title(f"Detects anomalies using {opt.symbol} dataset with Moving Median")
+        plt.savefig(f"plot/results/moving_median/{opt.symbol}_detected_anomalies_moving_median.png")
 
 
 if __name__ == '__main__':
