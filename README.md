@@ -12,7 +12,7 @@
 
 <p align="center">
     <br>
-    <img src="results/cnn_stl_sr/DHOILNYHdetected_anomalies_cnn_stl_sr.png">
+    <img src="plot/results/cnn_stl_sr/DHOILNYHdetected_anomalies_cnn_stl_sr.png">
     <br>
 <p>
 
