@@ -12,7 +12,7 @@
 
 <p align="center">
     <br>
-    <img src="plot/results/cnn_stl_sr/DCOILBRENTEU_ROC_curve.png">
+    <img src="plot/results/cnn_stl/DCOILBRENTEU_detected_anomalies_cnn_stl_sr.png">
     <br>
 <p>
 
