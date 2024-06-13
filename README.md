@@ -1,5 +1,14 @@
-# Analysis-of-crude-oil-data
-Đề tài bài tập lớn môn Lập trình AI.
+<h1 align="center">
+    Phân tích dữ liệu giá dầu thô
+</h1>
+
+<div align="center">
+  
+  <a href="https://github.com/Phenikaa-University/Analysis-of-crude-oil-data">![link to main GitHub showing Stars number](https://img.shields.io/github/stars/Phenikaa-University/Analysis-of-crude-oil-data?style=social)</a>
+  <a href="https://github.com/Phenikaa-University/Analysis-of-crude-oil-data">![link to main GitHub showing Forks number](https://img.shields.io/github/forks/Phenikaa-University/Analysis-of-crude-oil-data?style=social)</a>
+  <a href="https://twitter.com/cngvng413">![X (formerly Twitter) URL](https://img.shields.io/twitter/follow/cngvng413)</a>
+ 
+</div>
 
 <p align="center">
     <br>
@@ -7,11 +16,18 @@
     <br>
 <p>
 
-We present a novel approach for anomaly detection in time-series data by combining three modern models, including Convolutional Neural Network (CNN), Seasonal and Trend decomposition using Loess (STL), and Spectral Residual (SR). By preprocessing the data using the STL and SR models, we extract the important points in the time-series and feed them into the CNN model to detect anomalies. This enables us to effectively identify anomalies within the data set.
+The final exam is designed to expand on the concepts covered in the midterm exam and provide a deeper understanding of the subject matter. Specifically, we plan to introduce a Convolutional Neural Network (CNN) model, which will replace the traditional Neural Network (NN) model used in the midterm exam. The CNN model is a powerful tool that is commonly used in image processing and has shown promising results in a variety of applications. Additionally, we will incorporate the Spectral Residual (SR) method to enhance the data preprocessing phase of the model. This method has been demonstrated to effectively remove noise and artifacts from images, resulting in improved accuracy and performances.
+
 
 ## Author
 
-[Vuong Tuan Cuong](https://cngvng.github.io/) - ID: 21011490 
+<div align="center">
+
+|  Họ và tên | MSSV | Lớp |
+| -------- | -------- | -------- |
+| [Vương Tuấn Cường](https://cngvng.github.io/)  | 21011490    | K15-KHMT    |
+
+</div>
 
 ## Requirements
 
