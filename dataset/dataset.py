@@ -38,7 +38,7 @@ def split_sequence(opt, sequence):
         y.append(seq_y)
     return np.array(X), np.array(y)
 
-#STL_SR transform includes 2 STL steps and 1 SR step in the middle; SR stands for spectral residual
+# STL_SR transform includes 2 STL steps and 1 SR step in the middle; SR stands for spectral residual
 def  stl_sr_transform(opt, y,x):
     """Parameters
     ----------
