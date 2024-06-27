@@ -16,7 +16,7 @@
     <br>
 <p>
 
-The final exam is designed to expand on the concepts covered in the midterm exam and provide a deeper understanding of the subject matter. Specifically, we plan to introduce a Convolutional Neural Network (CNN) model, which will replace the traditional Neural Network (NN) model used in the midterm exam. The CNN model is a powerful tool that is commonly used in image processing and has shown promising results in a variety of applications. Additionally, we will incorporate the Spectral Residual (SR) method to enhance the data preprocessing phase of the model. This method has been demonstrated to effectively remove noise and artifacts from images, resulting in improved accuracy and performances.
+Báo cáo thị trường dầu thô là một nguồn thông tin quan trọng về thị trường dầu thô. Báo cáo này cung cấp thông tin tổng quan về thị trường, giúp dự đoán xu hướng giá thị trường dầu thô trong tương lai, đánh giá các yếu tố rủi ro và hỗ trợ các nhà đầu tư trong việc đưa ra quyết định. Trong bài tập lớn này, chúng tôi tập trung vào việc phân tích dữ liệu giá dầu thô dựa trên cơ sở dữ liệu FRED để đưa ra các cách phân tích và đánh giá đồng thời dự đoán các yếu tố tác động gây nên sự bất thường trong biến đổi giá cả của thị trường dầu mỏ.
 
 
 ## Author
@@ -37,6 +37,12 @@ The final exam is designed to expand on the concepts covered in the midterm exam
 
 ```
     pip install -r requirements.txt
+```
+
+## Demo
+
+```
+    streamlit run st.py
 ```
 
 ## Inference 
