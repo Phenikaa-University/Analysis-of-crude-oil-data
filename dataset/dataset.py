@@ -18,7 +18,7 @@ def get_fred_dataset(opt):
 
 def get_residual_com(opt, y,index):
     y_df = pd.DataFrame({opt.symbol: y}, index=index)
-    y_decom = seasonal_decompose(y_df, model='multiplicative')
+    y_decom = seasonal_decompose(y_df, model='additive')
     y_res= np.copy(y_decom.resid) 
     #padding missing "nan" datapoints with 1 at the beginning and end of residual sequence y_res
     y_res[0:2]=1

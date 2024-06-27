@@ -1,73 +1,66 @@
-from dataset.dataset import *
-from dataset.utils import *
-import argparse
-from models.cnnAD import cnn_structure
-from models.mvAD import moving_average, moving_median
-from utils import *
+import streamlit as st
+import numpy as np
+import matplotlib.pyplot as plt
 import os
 import streamlit as st
-from test import cnn_stl_detector, cnn_stl_sr
 
+from models.utils import *
+from dataset.utils import generate_point_outliers, exact_detection_function, precision, recall, f_beta_measure
 
-symbol_test = st.sidebar.selectbox("Input Symbol example",  
-                       ("DCOILBRENTEU", "DHOILNYH", "OVXCLS", "GVZCLS", "VIXCLS"))
+st.set_page_config("Anomaly Detection Demo", "📈")
 
-
-detected_type = st.sidebar.selectbox("select model", ("cnn_stl_detector", "cnn_stl_sr", "moving_average"))
+# Typing input data in streamlit
+st.title("Anomaly Detection Demo")
+def get_input_st():
+    symbol = st.selectbox("Select the symbol", ["DCOILBRENTEU", "DHOILNYH", "OVXCLS", "DGASNYH"])
+    date_time = st.text_input("Enter the start date in the format YYYY-MM-DD", "1880-01-01")
+    mode = st.selectbox("Select the mode", ["cnn_stl_sr", "ma_stl_sr", "mm_stl_sr"])
+    threshold = st.number_input("Enter the detection threshold", 0.0, 10.0, 0.5)
+    window_size = st.selectbox("Select the window size", [100, 200, 300, 400, 500])
+    return symbol, date_time, mode, threshold, window_size
 
 def main():
-  
-    st.title("Anomaly detection in time series")
-    model()
+    symbol, date_time, model, threshold, window_size = get_input_st()
+    window_size = int(window_size)
+    # Tạo một nút để chạy phân tích
+    if st.button("Detect Anomalies"):
 
+        xs_test, ys_test = get_fred_dataset(symbol=symbol, date_time=date_time)
+        ys_test_imputed = basic_imputation(ys_test)
+        
+        ys_corrputed, positions = generate_point_outliers(
+            raw_data=ys_test_imputed,
+            anomaly_fraction=0.005,
+            window_size=window_size,
+            pointwise_deviation=3.5,
+            rng_seed=2
+        )
+        ys_corr_res = get_residual_com(ys_corrputed, xs_test)
 
-def model():
-    date_time_test = "1800-1-1" 
-    xs_test,ys_test = get_fred_dataset(symbol_test,date_time_test)
-    ys_test_imputed = basic_imputation(ys_test)
-    
-    #add anomalies to imputed test data to obtain corrupted data which is used for testing
-    ys_corrupted,positions = generate_point_outliers(raw_data=ys_test_imputed,
-        anomaly_fraction=0.005,
-        window_size=100,
-        pointwise_deviation=3.5, 
-        rng_seed=2)
-    
-    #get residual from y_corrupted which will be used as input sequence of detector
-    ys_corr_res = get_residual_com(ys_corrupted,xs_test)
-    
-    
+        # Phát hiện dị thường dựa trên model đã chọn
+        if model == "cnn_stl_sr":
+            detected = cnn_stl_sr(ys_corr_res, x=xs_test, detection_threshold=threshold, weight_dir="checkpoints/cnn_stl_sr.weights.h5")
+        elif model == "ma_stl_sr":
+            detected = moving_median(ys_corr_res, window_size, detection_threshold=threshold)
+        elif model == "mm_stl_sr":
+            detected = moving_average(ys_corr_res, window_size, detection_threshold=threshold)
 
-    #detection_threshold is selected in [0.005,0.025]
-    
-    if detected_type == "cnn_stl_detector" :
-        #load weight directory for cnn_stl model
-        weight_dir = './saved_models/cnn_stl_1.h5'
-        detected = cnn_stl_detector(ys_corr_res,0.045,weight_dir)
-    elif detected_type == "cnn_stl_sr":
-        #load weight directory for cnn_stl model
-        weight_dir = './saved_models/cnn_stl_9.h5'
-        detected = cnn_stl_sr(ys_corrupted, xs_test,0.08,weight_dir)
-    else:
-        detected = moving_average(ys_corrupted,100,3)
-    
-    tp,fp,fn = exact_detection_function(detected=detected,truth=positions)
-    st.write("----------------------------------------------------------------")
-    st.write("true positives:",tp,"| false positives:",fp,"| false_negatives:",fn)
-    st.write("----------------------------------------------------------------")
-    st.write("precision:",precision(tp=tp,fp=fp,fn=fn))
-    st.write("recall:",recall(tp=tp,fp=fp,fn=fn))
-    st.write("f1:",f_beta_measure(tp=tp,fp=fp,fn=fn,beta=1))
-    st.write("----------------------------------------------------------------")
-    
-    
-    
-    
-    st.write("Visualize the detected anomalies")
-    fig,ax = plt.subplots(1,figsize=(12,9))
-    plt.plot(ys_corrupted,label="corrupted data")
-    plt.plot(positions,ys_corrupted[positions],'rx', markersize=8, label="true anomalies")
-    plt.plot(detected,ys_corrupted[detected],'ko', markersize=4, label="detected anomalies")
-    st.pyplot(fig)
+        # Tính toán và hiển thị các chỉ số đánh giá
+        tp, fp, fn, tn = exact_detection_function(detected=detected, truth=positions)
+        st.write("Evaluation Metrics:")
+        st.write(f"Precision: {precision(tp, fp, fn):.4f}")
+        st.write(f"Recall: {recall(tp, fp, fn):.4f}")
+        st.write(f"F1-score: {f_beta_measure(tp, fp, fn, beta=1):.4f}")
 
-main()
+        # Vẽ và hiển thị biểu đồ
+        fig, ax = plt.subplots(figsize=(12, 6))
+        ax.plot(ys_corrputed, label="corrupted data")
+        ax.plot(positions, ys_corrputed[positions], 'rx', markersize=8, label="true anomalies")
+        ax.plot(detected, ys_corrputed[detected], 'ko', markersize=4, label="detected anomalies")
+        ax.legend()
+        ax.set_title(f"Anomaly Detection using {model} on {symbol} dataset")
+        plt.savefig(f"plot/results/{model}_{symbol}.png")
+        st.pyplot(fig)
+
+if __name__ == "__main__":
+    main()
